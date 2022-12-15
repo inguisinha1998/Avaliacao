@@ -1,0 +1,59 @@
+from fastapi import FastAPI, status
+from pydantic import BaseModel, Field, validator
+from typing import Optional
+from datetime import datetime
+from fastapi.responses import JSONResponse
+now = datetime.utcnow()
+ 
+app = FastAPI()
+
+class Cliente(BaseModel):
+    id: Optional [int] = 0
+    nome: str 
+    email: str
+    telefone: int
+    data_de_nascimento: datetime = Field(default_factory=datetime.utcnow)
+    vip: str
+    data_do_cadastro: datetime = Field(default_factory=datetime.utcnow)
+    desc: Optional[str] = None
+
+db_cliente = [
+  Cliente(id =1, nome="Elizabeth Nunes", email= "elizabeth.nunes@gmail.com", telefone= "18991648513", data_de_nascimento= "2010-03-15 15:30", vip = "S", data_do_cadatro = "2022-08/23 16:30"),
+  Cliente(id =2, nome="Ingrid Stefany", email= "ingrid.stefany@gmail.com", telefone= "1899456213", data_de_nascimento= "1998-01-31 18:40", vip = "S", data_do_cadatro = "2022-04-21 10:30"),
+  Cliente(id =3, nome="Thomaz Nunes", email= "thomaz.nunes@gmail.com", telefone= "18964548513", data_de_nascimento= "2010-07-26 09:50", vip = "S", data_do_cadatro = "2022-09-25 18:30"),
+  Cliente(id =4, nome="Leandro Iorio", email= "leandro.iorio@gmail.com", telefone= "18996725873", data_de_nascimento= "1998-07-13 09:30", vip = "S", data_do_cadatro = "2022-05-07 08:20"),
+]
+
+
+@app.get("/")
+def home():
+    return {"mensagem": "API de Fila by FastAPI"}
+
+
+@app.get("/cliente/", status_code=status.HTTP_200_OK)
+async def exibir_cliente():
+    return {"cliente": db_cliente}
+    
+  
+@app.get("/cliente{id}", status_code=status.HTTP_404_NOT_FOUND)
+async def mostrar_cliente(id: int):
+    return  {"cliente": [cliente for cliente in db_cliente if cliente.id == id]}
+
+@app.post ("/cliente")
+def criar_cliente(cliente: Cliente):
+    cliente.id = db_cliente[-1].id + 1
+    db_cliente.append(cliente)
+    return {"mensagem": "Cliente Criado Com Sucesso"}
+
+@app.patch("/cliente/{id}", status_code=status.HTTP_404_NOT_FOUND)
+def atualizar_cliente(id: int, cliente: Cliente):
+    index = [index for index, cliente in enumerate (db_cliente) if cliente.id == id]    
+    cliente.id = db_cliente[index[0]].id
+    db_cliente[index[0]] = cliente
+    return {"mensagem": "Cliente atualizado!"}
+
+@app.delete("/cliente{id}",status_code=status.HTTP_404_NOT_FOUND)
+def apagar_cliente(id: int):
+    cliente = [cliente for cliente in db_cliente if cliente.id == id]
+    db_cliente.remove(cliente[0])
+    return {"mensagem": "Cliente removido!"}
